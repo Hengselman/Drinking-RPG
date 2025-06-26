@@ -1,0 +1,35 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-900 text-white;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+  }
+}
+
+@layer components {
+  .pixel-borders {
+    @apply border-4 border-white;
+    box-shadow: 
+      2px 2px 0px 0px rgba(0,0,0,0.5),
+      inset -2px -2px 0px 0px rgba(0,0,0,0.5),
+      inset 2px 2px 0px 0px rgba(255,255,255,0.5);
+  }
+  
+  .pixel-button {
+    @apply px-4 py-2 bg-blue-600 text-white font-pixel text-xs uppercase tracking-wider;
+    @apply hover:bg-blue-700 active:bg-blue-800;
+    @apply transition-all duration-75;
+    @apply pixel-borders;
+  }
+  
+  .pixel-card {
+    @apply bg-slate-800 p-4 rounded-none;
+    @apply pixel-borders;
+  }
+}

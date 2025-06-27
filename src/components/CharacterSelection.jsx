@@ -41,7 +41,7 @@ export default function CharacterSelection() {
   function handleSlotClick(slotIndex) {
     const character = characters[slotIndex];
     if (character) {
-      navigate(`/game/${slotIndex}`);
+      navigate(`/room/${slotIndex}`);
     } else {
       navigate(`/create-character/${slotIndex}`);
     }

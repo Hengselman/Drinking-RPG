@@ -1,17 +1,21 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { SHOP_ITEMS, HATS, calculateLevel, getXpForNextLevel } from '../data/gameData';
+import { SHOP_ITEMS, HATS, calculateLevel, getXpForNextLevel, WORLD_LEVELS } from '../data/gameData';
 import { motion } from 'framer-motion';
-import { ArrowLeft, ShoppingCart, Package, Crown, Zap, Coins } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Package, Crown, Zap, Coins, Target, ChevronLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function Game() {
   const { slotIndex } = useParams();
   const { currentUser, isAdmin } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const worldLevel = searchParams.get('worldLevel');
+  
   const [character, setCharacter] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showShop, setShowShop] = useState(false);
@@ -175,7 +179,100 @@ export default function Game() {
 
   const currentLevel = calculateLevel(character.xp);
   const xpForNextLevel = getXpForNextLevel(character.xp);
+  
+  // Als er een world level is, toon de opdracht
+  if (worldLevel) {
+    const level = WORLD_LEVELS[worldLevel];
+    if (!level) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-slate-900">
+          <div className="pixel-card">
+            <p className="font-pixel text-lg">Level niet gevonden</p>
+          </div>
+        </div>
+      );
+    }
 
+    return (
+      <div className="min-h-screen bg-slate-900 p-2 sm:p-4">
+        <div className="max-w-2xl mx-auto">
+          <motion.div
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="mb-6"
+          >
+            <button
+              onClick={() => navigate(`/room/${slotIndex}`)}
+              className="pixel-button inline-flex items-center text-xs sm:text-sm mb-4"
+            >
+              <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+              Terug naar Lobby
+            </button>
+            
+            <h1 className="font-pixel text-2xl sm:text-3xl text-yellow-400 text-center">
+              World Level {level.id}
+            </h1>
+          </motion.div>
+
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.1 }}
+            className="pixel-card text-center"
+          >
+            <div className="text-6xl sm:text-8xl mb-4">
+              {level.icon}
+            </div>
+            
+            <h2 className="font-pixel text-xl sm:text-2xl text-white mb-2">
+              {level.name}
+            </h2>
+            
+            <p className="font-pixel text-sm sm:text-base text-gray-400 mb-6">
+              {level.description}
+            </p>
+            
+            <div className="bg-slate-700 p-4 rounded mb-6">
+              <h3 className="font-pixel text-sm text-yellow-400 mb-2">Opdracht:</h3>
+              <p className="font-pixel text-xs sm:text-sm text-white">
+                {level.task}
+              </p>
+            </div>
+            
+            <div className="bg-slate-800 p-3 rounded">
+              <p className="font-pixel text-xs text-gray-400">
+                Vraag de admin om XP wanneer je de opdracht hebt voltooid!
+              </p>
+            </div>
+          </motion.div>
+
+          {/* Character Stats Mini View */}
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="mt-6 pixel-card"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">{character.hat?.sprite || '👤'}</span>
+                <div>
+                  <p className="font-pixel text-sm text-white">{character.name}</p>
+                  <p className="font-pixel text-xs text-gray-400">Level {currentLevel}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="font-pixel text-xs text-yellow-400">{character.xp} XP</p>
+                <p className="font-pixel text-xs text-gray-400">{character.coins} 🪙</p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
+  // Normale game view (zonder world level)
   return (
     <div className="min-h-screen bg-slate-900 p-2 sm:p-4">
       <div className="max-w-6xl mx-auto">
@@ -186,7 +283,7 @@ export default function Game() {
           className="flex flex-col sm:flex-row justify-between items-center mb-6 sm:mb-8 gap-4"
         >
           <button
-            onClick={() => navigate('/characters')}
+            onClick={() => navigate(`/room/${slotIndex}`)}
             className="pixel-button inline-flex items-center text-xs sm:text-sm"
           >
             <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />

@@ -7,6 +7,7 @@ import CreateCharacter from './components/CreateCharacter';
 import Game from './components/Game';
 import Admin from './components/Admin';
 import PrivateRoute from './components/PrivateRoute';
+import RoomLobby from './components/RoomLobby';
 
 // Globale admin functie voor browser console
 window.makeAdmin = async () => {
@@ -92,6 +93,11 @@ function App() {
           <Route path="/create-character/:slotIndex" element={
             <PrivateRoute>
               <CreateCharacter />
+            </PrivateRoute>
+          } />
+          <Route path="/room/:slotIndex" element={
+            <PrivateRoute>
+              <RoomLobby />
             </PrivateRoute>
           } />
           <Route path="/game/:slotIndex" element={

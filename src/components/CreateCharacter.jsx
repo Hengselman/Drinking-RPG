@@ -64,7 +64,7 @@ export default function CreateCharacter() {
       }, { merge: true });
 
       toast.success('Karakter aangemaakt!');
-      navigate(`/game/${slotIndex}`);
+      navigate(`/room/${slotIndex}`);
     } catch (error) {
       console.error('Error creating character:', error);
       toast.error('Fout bij aanmaken karakter');

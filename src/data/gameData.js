@@ -279,3 +279,88 @@ export const GAME_RULES = {
     "🍺 Drink verantwoordelijk en heb plezier!"
   ]
 };
+
+export const WORLD_LEVELS = {
+  1: {
+    id: 1,
+    name: 'Beer Pong Arena',
+    description: 'Ga bierpongen!',
+    task: 'Speel een potje beer pong. Win = 100 XP, Verlies = 50 XP',
+    icon: '🏓',
+    xpWin: 100,
+    xpLose: 50
+  },
+  2: {
+    id: 2,
+    name: 'Push-up Challenge',
+    description: 'Tijd voor beweging!',
+    task: 'Doe 5 push-ups. Lukt het? 75 XP!',
+    icon: '💪',
+    xpReward: 75
+  },
+  3: {
+    id: 3,
+    name: 'Mexicaantje',
+    description: 'Dobbelen maar!',
+    task: 'Speel een rondje Mexicaantje. Elk biertje = 25 XP',
+    icon: '🎲',
+    xpPerBeer: 25
+  },
+  4: {
+    id: 4,
+    name: 'Shotje Tijd',
+    description: 'Klein maar krachtig!',
+    task: 'Neem een shotje naar keuze. 50 XP direct!',
+    icon: '🥃',
+    xpReward: 50
+  },
+  5: {
+    id: 5,
+    name: 'Flip Cup Team',
+    description: 'Teamwork makes the dream work',
+    task: 'Speel flip cup met je team. Win = 120 XP per persoon!',
+    icon: '🍺',
+    xpReward: 120
+  },
+  6: {
+    id: 6,
+    name: 'Karaoke Boss',
+    description: 'Tijd om te zingen!',
+    task: 'Zing een nummer naar keuze. Applaus = 80 XP!',
+    icon: '🎤',
+    xpReward: 80
+  },
+  7: {
+    id: 7,
+    name: 'Chug Contest',
+    description: 'De klassieke adtje wedstrijd',
+    task: 'Ad een biertje. Snelste tijd = 150 XP, rest = 75 XP',
+    icon: '🍻',
+    xpWin: 150,
+    xpLose: 75
+  },
+  8: {
+    id: 8,
+    name: 'Truth or Dare',
+    description: 'Waarheid of Durven',
+    task: 'Kies waarheid of durven. Voltooi = 60 XP',
+    icon: '😈',
+    xpReward: 60
+  },
+  9: {
+    id: 9,
+    name: 'Kingsen',
+    description: 'Kaarten en drank',
+    task: 'Speel een rondje Kingsen. Per regel = 20 XP',
+    icon: '👑',
+    xpPerRule: 20
+  },
+  10: {
+    id: 10,
+    name: 'Final Boss',
+    description: 'De ultieme uitdaging',
+    task: 'Daag de admin uit voor een duel naar keuze. Win = 300 XP!',
+    icon: '🏆',
+    xpReward: 300
+  }
+};

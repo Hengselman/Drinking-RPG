@@ -32,4 +32,14 @@
     @apply bg-slate-800 p-4 rounded-none;
     @apply pixel-borders;
   }
+
+  .pixel-input {
+    @apply w-full px-3 py-2 bg-slate-700 border-2 border-slate-600 text-white font-pixel text-xs;
+    @apply focus:border-blue-400 focus:outline-none;
+    @apply placeholder-gray-400;
+  }
+
+  .font-pixel {
+    font-family: 'Press Start 2P', cursive;
+  }
 }

@@ -15,6 +15,7 @@ export default function Game() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const worldLevel = searchParams.get('worldLevel');
+  const roomId = searchParams.get('roomId');
   
   const [character, setCharacter] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -44,6 +45,17 @@ export default function Game() {
     } catch (error) {
       console.error('Error loading character:', error);
       setLoading(false);
+    }
+  }
+
+  // Functie om terug te gaan naar de kamer
+  function goBackToRoom() {
+    if (roomId) {
+      // Ga terug naar de specifieke kamer
+      navigate(`/room/${slotIndex}?roomId=${roomId}`);
+    } else {
+      // Fallback naar normale room lobby
+      navigate(`/room/${slotIndex}`);
     }
   }
 
@@ -202,7 +214,7 @@ export default function Game() {
             className="mb-6"
           >
             <button
-              onClick={() => navigate(`/room/${slotIndex}`)}
+              onClick={goBackToRoom}
               className="pixel-button inline-flex items-center text-xs sm:text-sm mb-4"
             >
               <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
@@ -244,6 +256,17 @@ export default function Game() {
                 Vraag de admin om XP wanneer je de opdracht hebt voltooid!
               </p>
             </div>
+            
+            {/* Terug naar kamer knop */}
+            <div className="mt-6">
+              <button
+                onClick={goBackToRoom}
+                className="w-full pixel-button flex items-center justify-center gap-2"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Terug naar Kamer
+              </button>
+            </div>
           </motion.div>
 
           {/* Character Stats Mini View */}
@@ -283,7 +306,7 @@ export default function Game() {
           className="flex flex-col sm:flex-row justify-between items-center mb-6 sm:mb-8 gap-4"
         >
           <button
-            onClick={() => navigate(`/room/${slotIndex}`)}
+            onClick={goBackToRoom}
             className="pixel-button inline-flex items-center text-xs sm:text-sm"
           >
             <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
 import { 
@@ -15,13 +15,16 @@ import {
   updateDoc 
 } from 'firebase/firestore';
 import { motion } from 'framer-motion';
-import { Users, Copy, LogOut, Crown, ArrowRight } from 'lucide-react';
+import { Users, Copy, LogOut, Crown, ArrowRight, Package, ShoppingCart } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { SHOP_ITEMS } from '../data/gameData';
 
 export default function RoomLobby() {
   const { currentUser, isAdmin } = useAuth();
   const { slotIndex } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const roomIdFromUrl = searchParams.get('roomId');
   
   const [character, setCharacter] = useState(null);
   const [showJoinRoom, setShowJoinRoom] = useState(true);
@@ -31,10 +34,19 @@ export default function RoomLobby() {
   const [roomPlayers, setRoomPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
+  const [showShop, setShowShop] = useState(false);
+  const [showInventory, setShowInventory] = useState(false);
 
   useEffect(() => {
     loadCharacter();
   }, []);
+
+  useEffect(() => {
+    // Als er een roomId in de URL staat, probeer automatisch in die kamer te komen
+    if (roomIdFromUrl && character) {
+      joinSpecificRoom(roomIdFromUrl);
+    }
+  }, [roomIdFromUrl, character]);
 
   useEffect(() => {
     if (currentRoom) {
@@ -132,6 +144,44 @@ export default function RoomLobby() {
     }
   }
 
+  async function joinSpecificRoom(roomId) {
+    try {
+      const roomDoc = await getDoc(doc(db, 'rooms', roomId));
+      if (roomDoc.exists()) {
+        const roomData = roomDoc.data();
+        
+        // Check of speler al in de kamer zit
+        const alreadyInRoom = roomData.players?.some(p => p.uid === currentUser.uid);
+        
+        if (!alreadyInRoom) {
+          // Voeg speler toe aan kamer
+          const updatedPlayers = [...(roomData.players || []), {
+            uid: currentUser.uid,
+            characterSlot: parseInt(slotIndex),
+            character: character,
+            worldLevel: 1,
+            joinedAt: new Date().toISOString()
+          }];
+
+          await updateDoc(doc(db, 'rooms', roomId), {
+            players: updatedPlayers
+          });
+        }
+
+        setCurrentRoom({ id: roomId, ...roomData });
+        setShowJoinRoom(false);
+        toast.success(`Je bent toegevoegd aan "${roomData.name}"`);
+      } else {
+        toast.error('Kamer niet gevonden');
+        setShowJoinRoom(true);
+      }
+    } catch (error) {
+      console.error('Error joining specific room:', error);
+      toast.error('Fout bij joinen kamer');
+      setShowJoinRoom(true);
+    }
+  }
+
   async function joinRoom() {
     if (roomCode.length !== 4) {
       toast.error('Voer een 4-letterige code in');
@@ -224,8 +274,118 @@ export default function RoomLobby() {
     }
   }
 
+  async function buyItem(item) {
+    if (character.coins < item.price) {
+      toast.error('Niet genoeg munten!');
+      return;
+    }
+
+    try {
+      const userRef = doc(db, 'users', currentUser.uid);
+      const userDoc = await getDoc(userRef);
+      const userData = userDoc.exists() ? userDoc.data() : {};
+      const characters = userData.characters || [];
+      
+      const updatedCharacter = {
+        ...character,
+        coins: character.coins - item.price,
+        inventory: [...character.inventory, item]
+      };
+
+      characters[parseInt(slotIndex)] = updatedCharacter;
+      
+      await setDoc(userRef, {
+        email: currentUser.email,
+        createdAt: userData.createdAt || new Date().toISOString(),
+        isAdmin: userData.isAdmin || false,
+        characters: characters
+      }, { merge: true });
+      
+      setCharacter(updatedCharacter);
+      toast.success(`${item.name} gekocht!`);
+    } catch (error) {
+      console.error('Error buying item:', error);
+      toast.error('Fout bij kopen item');
+    }
+  }
+
+  async function equipItem(item) {
+    try {
+      const userRef = doc(db, 'users', currentUser.uid);
+      const userDoc = await getDoc(userRef);
+      const userData = userDoc.exists() ? userDoc.data() : {};
+      const characters = userData.characters || [];
+      
+      const updatedCharacter = {
+        ...character,
+        equipped: {
+          ...character.equipped,
+          [item.type]: item
+        }
+      };
+
+      characters[parseInt(slotIndex)] = updatedCharacter;
+      
+      await setDoc(userRef, {
+        email: currentUser.email,
+        createdAt: userData.createdAt || new Date().toISOString(),
+        isAdmin: userData.isAdmin || false,
+        characters: characters
+      }, { merge: true });
+      
+      setCharacter(updatedCharacter);
+      toast.success(`${item.name} uitgerust!`);
+    } catch (error) {
+      console.error('Error equipping item:', error);
+      toast.error('Fout bij uitrusten item');
+    }
+  }
+
+  async function useItem(item, index) {
+    try {
+      const userRef = doc(db, 'users', currentUser.uid);
+      const userDoc = await getDoc(userRef);
+      const userData = userDoc.exists() ? userDoc.data() : {};
+      const characters = userData.characters || [];
+      
+      // Remove item from inventory
+      const updatedInventory = [...character.inventory];
+      updatedInventory.splice(index, 1);
+      
+      const updatedCharacter = {
+        ...character,
+        inventory: updatedInventory
+      };
+
+      characters[parseInt(slotIndex)] = updatedCharacter;
+      
+      await setDoc(userRef, {
+        email: currentUser.email,
+        createdAt: userData.createdAt || new Date().toISOString(),
+        isAdmin: userData.isAdmin || false,
+        characters: characters
+      }, { merge: true });
+      
+      setCharacter(updatedCharacter);
+      
+      // Show effect message based on item type
+      if (item.type === 'real_item') {
+        toast.success(`${item.name} gebruikt! ${item.description}`);
+      } else if (item.type === 'penalty') {
+        toast.success(`${item.name} gebruikt! ${item.description}`);
+      } else if (item.effect) {
+        toast.success(`${item.name} gebruikt! ${item.description}`);
+      } else {
+        toast.success(`${item.name} gebruikt!`);
+      }
+    } catch (error) {
+      console.error('Error using item:', error);
+      toast.error('Fout bij gebruiken item');
+    }
+  }
+
   function goToWorldLevel(level) {
-    navigate(`/game/${slotIndex}?worldLevel=${level}`);
+    navigate(`/game/${slotIndex}?worldLevel=${level}&roomId=${currentRoom.id}`);
   }
 
   if (loading) {
@@ -316,7 +476,7 @@ export default function RoomLobby() {
 
   return (
     <div className="min-h-screen bg-slate-900 p-2 sm:p-4">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -339,57 +499,188 @@ export default function RoomLobby() {
           </div>
         </motion.div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          {roomPlayers.map((player, index) => {
-            const isCurrentPlayer = player.uid === currentUser.uid;
-            const playerWorldLevel = player.worldLevel || 1;
-            
-            return (
-              <motion.div
-                key={player.uid}
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: index * 0.1 }}
-                className={`pixel-card ${isCurrentPlayer ? 'border-yellow-400' : ''}`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">
-                      {player.character?.hat?.sprite || '👤'}
-                    </span>
-                    <div>
-                      <h3 className="font-pixel text-sm">
-                        {player.character?.name}
-                      </h3>
-                      <p className="font-pixel text-xs text-gray-400">
-                        Level {player.character?.level}
-                      </p>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
+          {/* Players List */}
+          <motion.div
+            initial={{ x: -20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            className="lg:col-span-2"
+          >
+            <div className="pixel-card">
+              <h2 className="font-pixel text-lg text-white mb-4 flex items-center">
+                <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                Spelers ({roomPlayers.length})
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {roomPlayers.map((player, index) => {
+                  const isCurrentPlayer = player.uid === currentUser.uid;
+                  const playerWorldLevel = player.worldLevel || 1;
+                  
+                  return (
+                    <motion.div
+                      key={player.uid}
+                      initial={{ scale: 0.9, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ delay: index * 0.1 }}
+                      className={`pixel-card ${isCurrentPlayer ? 'bg-blue-900' : ''}`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center">
+                          <span className="text-2xl sm:text-3xl mr-2">
+                            {player.character?.hat?.sprite || '👤'}
+                          </span>
+                          <div>
+                            <p className="font-pixel text-xs sm:text-sm text-white">
+                              {player.character?.name}
+                            </p>
+                            <p className="font-pixel text-xs text-gray-400">
+                              {player.character?.class?.name}
+                            </p>
+                          </div>
+                        </div>
+                        {player.uid === currentRoom?.createdBy && (
+                          <Crown className="w-4 h-4 text-yellow-400" />
+                        )}
+                      </div>
+                      
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-yellow-400">Level {player.character?.level || 1}</span>
+                        <span className="text-gray-400">World {playerWorldLevel}</span>
+                      </div>
+
+                      {isCurrentPlayer && playerWorldLevel > 0 && (
+                        <button
+                          onClick={() => goToWorldLevel(playerWorldLevel)}
+                          className="w-full mt-2 pixel-button text-xs flex items-center justify-center gap-1"
+                        >
+                          Ga naar Level {playerWorldLevel}
+                          <ArrowRight className="w-3 h-3" />
+                        </button>
+                      )}
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Shop/Inventory Panel */}
+          <motion.div
+            initial={{ x: 20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            className="space-y-4"
+          >
+            {/* Character Info */}
+            <div className="pixel-card">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-3xl">{character?.hat?.sprite || '👤'}</span>
+                <div className="text-right">
+                  <p className="font-pixel text-xs text-yellow-400">{character?.xp || 0} XP</p>
+                  <p className="font-pixel text-xs text-gray-400">{character?.coins || 0} 🪙</p>
+                </div>
+              </div>
+              <p className="font-pixel text-sm text-white mb-2">{character?.name}</p>
+              <p className="font-pixel text-xs text-gray-400 mb-4">{character?.class?.name}</p>
+              
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowInventory(!showInventory)}
+                  className="flex-1 pixel-button text-xs flex items-center justify-center"
+                >
+                  <Package className="w-3 h-3 mr-1" />
+                  Inventory
+                </button>
+                <button
+                  onClick={() => setShowShop(!showShop)}
+                  className="flex-1 pixel-button text-xs flex items-center justify-center"
+                >
+                  <ShoppingCart className="w-3 h-3 mr-1" />
+                  Shop
+                </button>
+              </div>
+            </div>
+
+            {showShop && (
+              <div className="pixel-card">
+                <h3 className="font-pixel text-lg text-yellow-400 mb-4 flex items-center">
+                  <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                  Shop
+                </h3>
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {Object.values(SHOP_ITEMS).map((item) => (
+                    <div key={item.id} className="bg-slate-700 p-2 sm:p-3 flex justify-between items-center">
+                      <div className="flex-1">
+                        <p className="font-pixel text-xs text-white">{item.name}</p>
+                        <p className="font-pixel text-xs text-gray-400">{item.description}</p>
+                        {item.realItem && (
+                          <span className="font-pixel text-xs text-green-400">Echt item</span>
+                        )}
+                        {item.penalty && (
+                          <span className="font-pixel text-xs text-red-400">Penalty</span>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => buyItem(item)}
+                        disabled={character.coins < item.price}
+                        className="pixel-button text-xs disabled:opacity-50 ml-2"
+                      >
+                        {item.price} 🪙
+                      </button>
                     </div>
-                  </div>
-                  {player.uid === currentRoom?.createdBy && (
-                    <Crown className="w-4 h-4 text-yellow-400" />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {showInventory && (
+              <div className="pixel-card">
+                <h3 className="font-pixel text-lg text-yellow-400 mb-4 flex items-center">
+                  <Package className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                  Inventory
+                </h3>
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {character.inventory.length === 0 ? (
+                    <p className="font-pixel text-xs text-gray-400">Lege inventory</p>
+                  ) : (
+                    character.inventory.map((item, index) => (
+                      <div key={index} className="bg-slate-700 p-2 sm:p-3 flex justify-between items-center">
+                        <div className="flex-1">
+                          <p className="font-pixel text-xs text-white">{item.name}</p>
+                          <p className="font-pixel text-xs text-gray-400">{item.description}</p>
+                          {item.realItem && (
+                            <span className="font-pixel text-xs text-green-400">Echt item</span>
+                          )}
+                          {item.penalty && (
+                            <span className="font-pixel text-xs text-red-400">Penalty</span>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => {
+                            // Equipment items can be equipped, others are used
+                            if (item.type === 'armor' || item.type === 'boots' || item.type === 'gloves' || item.type === 'accessory') {
+                              equipItem(item);
+                            } else {
+                              useItem(item, index);
+                            }
+                          }}
+                          className={`pixel-button text-xs ml-2 ${
+                            item.type === 'armor' || item.type === 'boots' || item.type === 'gloves' || item.type === 'accessory'
+                              ? 'bg-blue-600 hover:bg-blue-700'
+                              : 'bg-green-600 hover:bg-green-700'
+                          }`}
+                        >
+                          {item.type === 'armor' || item.type === 'boots' || item.type === 'gloves' || item.type === 'accessory' ? 'Equip' : 'Gebruik'}
+                        </button>
+                      </div>
+                    ))
                   )}
                 </div>
-                
-                <div className="font-pixel text-xs text-center p-2 bg-slate-800 rounded">
-                  World Level: {playerWorldLevel}
-                </div>
-
-                {isCurrentPlayer && playerWorldLevel > 0 && (
-                  <button
-                    onClick={() => goToWorldLevel(playerWorldLevel)}
-                    className="w-full mt-2 pixel-button text-xs flex items-center justify-center gap-1"
-                  >
-                    Ga naar Level {playerWorldLevel}
-                    <ArrowRight className="w-3 h-3" />
-                  </button>
-                )}
-              </motion.div>
-            );
-          })}
+              </div>
+            )}
+          </motion.div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 mt-6">
           <button
             onClick={leaveRoom}
             className="pixel-button flex items-center gap-2"

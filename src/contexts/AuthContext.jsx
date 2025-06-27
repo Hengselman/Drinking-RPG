@@ -1,12 +1,7 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth, db } from '../firebase';
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signOut,
-  onAuthStateChanged 
-} from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 const AuthContext = createContext();
 
@@ -16,40 +11,65 @@ export function useAuth() {
 
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
+  const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
 
   async function signup(email, password) {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     
-    // Maak gebruiker profiel in Firestore
+    // Check of het Hengselman@gmail.com is voor admin rechten
+    const isAdmin = email.toLowerCase() === 'hengselman@gmail.com';
+    
+    // Maak een gebruikersdocument aan in Firestore
     await setDoc(doc(db, 'users', userCredential.user.uid), {
       email: email,
       createdAt: new Date().toISOString(),
-      isAdmin: false,
+      isAdmin: isAdmin,
       characters: []
     });
     
     return userCredential;
   }
 
-  function login(email, password) {
+  async function login(email, password) {
     return signInWithEmailAndPassword(auth, email, password);
   }
 
-  function logout() {
+  async function logout() {
     return signOut(auth);
   }
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        if (userDoc.exists()) {
-          setIsAdmin(userDoc.data().isAdmin || false);
-        }
-      }
       setCurrentUser(user);
+      
+      if (user) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            const data = userDoc.data();
+            // Check of het Hengselman@gmail.com is voor admin rechten
+            const isAdmin = user.email.toLowerCase() === 'hengselman@gmail.com' || data.isAdmin;
+            setUserData({ ...data, isAdmin });
+          } else {
+            // Maak document aan als het niet bestaat
+            const isAdmin = user.email.toLowerCase() === 'hengselman@gmail.com';
+            await setDoc(doc(db, 'users', user.uid), {
+              email: user.email,
+              createdAt: new Date().toISOString(),
+              isAdmin: isAdmin,
+              characters: []
+            });
+            setUserData({ email: user.email, isAdmin, characters: [] });
+          }
+        } catch (error) {
+          console.error('Fout bij ophalen gebruikersdata:', error);
+          setUserData(null);
+        }
+      } else {
+        setUserData(null);
+      }
+      
       setLoading(false);
     });
 
@@ -58,11 +78,12 @@ export function AuthProvider({ children }) {
 
   const value = {
     currentUser,
-    isAdmin,
+    userData,
     loading,
-    login,
     signup,
-    logout
+    login,
+    logout,
+    isAdmin: userData?.isAdmin || false
   };
 
   return (
@@ -70,4 +91,4 @@ export function AuthProvider({ children }) {
       {!loading && children}
     </AuthContext.Provider>
   );
-}
+} 

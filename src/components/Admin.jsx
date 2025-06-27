@@ -164,27 +164,27 @@ export default function Admin() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 p-4">
+    <div className="min-h-screen bg-slate-900 p-2 sm:p-4">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="flex justify-between items-center mb-8"
+          className="flex flex-col sm:flex-row justify-between items-center mb-6 sm:mb-8 gap-4"
         >
           <button
             onClick={() => navigate('/characters')}
-            className="pixel-button inline-flex items-center"
+            className="pixel-button inline-flex items-center text-xs sm:text-sm"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
+            <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
             Terug
           </button>
-          <h1 className="font-pixel text-3xl text-yellow-400 flex items-center">
-            <Crown className="w-8 h-8 mr-3" />
+          <h1 className="font-pixel text-xl sm:text-2xl lg:text-3xl text-yellow-400 flex items-center">
+            <Crown className="w-6 h-6 sm:w-8 sm:h-8 mr-2 sm:mr-3" />
             ADMIN PANEL
           </h1>
           <div className="text-right">
-            <p className="font-pixel text-sm text-gray-400">
+            <p className="font-pixel text-xs sm:text-sm text-gray-400">
               {activeTab === 'players' ? `${users.length} Spelers` : `${rooms.length} Kamers`}
             </p>
           </div>
@@ -194,16 +194,16 @@ export default function Admin() {
         <div className="flex gap-2 mb-6">
           <button
             onClick={() => setActiveTab('players')}
-            className={`pixel-button ${activeTab === 'players' ? 'bg-yellow-600' : ''}`}
+            className={`pixel-button text-xs sm:text-sm ${activeTab === 'players' ? 'bg-yellow-600' : ''}`}
           >
-            <Users className="w-4 h-4 mr-2" />
+            <Users className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
             Spelers
           </button>
           <button
             onClick={() => setActiveTab('rooms')}
-            className={`pixel-button ${activeTab === 'rooms' ? 'bg-yellow-600' : ''}`}
+            className={`pixel-button text-xs sm:text-sm ${activeTab === 'rooms' ? 'bg-yellow-600' : ''}`}
           >
-            <Home className="w-4 h-4 mr-2" />
+            <Home className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
             Kamers
           </button>
         </div>
@@ -214,10 +214,10 @@ export default function Admin() {
             <motion.div
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              className="pixel-card mb-8"
+              className="pixel-card mb-6 sm:mb-8"
             >
-              <h2 className="font-pixel text-lg text-white mb-4">XP Toewijzen</h2>
-              <div className="flex items-center gap-4">
+              <h2 className="font-pixel text-sm sm:text-lg text-white mb-4">XP Toewijzen</h2>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                 <div>
                   <label className="block font-pixel text-xs text-gray-400 mb-1">
                     XP Bedrag
@@ -226,7 +226,7 @@ export default function Admin() {
                     type="number"
                     value={xpAmount}
                     onChange={(e) => setXpAmount(parseInt(e.target.value) || 0)}
-                    className="w-24 px-3 py-2 bg-slate-700 border-2 border-slate-600 text-white font-pixel text-sm"
+                    className="w-20 sm:w-24 px-2 sm:px-3 py-2 bg-slate-700 border-2 border-slate-600 text-white font-pixel text-xs sm:text-sm"
                     min="1"
                     max="1000"
                   />
@@ -234,15 +234,15 @@ export default function Admin() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => setXpAmount(Math.max(1, xpAmount - 10))}
-                    className="pixel-button"
+                    className="pixel-button text-xs"
                   >
-                    <Minus className="w-4 h-4" />
+                    <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
                   </button>
                   <button
                     onClick={() => setXpAmount(xpAmount + 10)}
-                    className="pixel-button"
+                    className="pixel-button text-xs"
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
                   </button>
                 </div>
               </div>
@@ -258,34 +258,39 @@ export default function Admin() {
                   transition={{ delay: userIndex * 0.1 }}
                   className="pixel-card"
                 >
-                  <div className="flex justify-between items-center mb-4">
-                    <div>
-                      <h3 className="font-pixel text-lg text-white">
-                        {user.email}
-                      </h3>
-                      <p className="font-pixel text-xs text-gray-400">
-                        {user.characters.filter(char => char).length} karakters • {user.totalXp} totaal XP
-                      </p>
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+                    <div className="flex-1 min-w-0">
+                      <button
+                        onClick={() => setSelectedUser(selectedUser === user.id ? null : user.id)}
+                        className="text-left w-full"
+                      >
+                        <h3 className="font-pixel text-xs sm:text-sm lg:text-lg text-white truncate hover:text-yellow-400 transition-colors">
+                          {user.email}
+                        </h3>
+                        <p className="font-pixel text-xs text-gray-400">
+                          {user.characters.filter(char => char).length} karakters • {user.totalXp} totaal XP
+                        </p>
+                      </button>
                     </div>
                     <button
                       onClick={() => setSelectedUser(selectedUser === user.id ? null : user.id)}
-                      className="pixel-button"
+                      className="pixel-button text-xs flex items-center"
                     >
-                      <Users className="w-4 h-4 mr-2" />
+                      <Users className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                       {selectedUser === user.id ? 'Verberg' : 'Toon'} Karakters
                     </button>
                   </div>
 
                   {selectedUser === user.id && (
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
                       {user.characters.map((character, slotIndex) => (
                         character ? (
-                          <div key={slotIndex} className="bg-slate-700 p-3">
-                            <div className="text-center mb-3">
-                              <div className="text-3xl mb-1">
+                          <div key={slotIndex} className="bg-slate-700 p-2 sm:p-3">
+                            <div className="text-center mb-2 sm:mb-3">
+                              <div className="text-2xl sm:text-3xl mb-1">
                                 {character.hat?.sprite || '👤'}
                               </div>
-                              <h4 className="font-pixel text-xs text-white">
+                              <h4 className="font-pixel text-xs text-white truncate">
                                 {character.name}
                               </h4>
                               <p className="font-pixel text-xs text-gray-400">
@@ -311,7 +316,7 @@ export default function Admin() {
                             </div>
                           </div>
                         ) : (
-                          <div key={slotIndex} className="bg-slate-700 p-3 flex items-center justify-center">
+                          <div key={slotIndex} className="bg-slate-700 p-2 sm:p-3 flex items-center justify-center">
                             <p className="font-pixel text-xs text-gray-500">Leeg</p>
                           </div>
                         )
@@ -328,7 +333,7 @@ export default function Admin() {
                 animate={{ scale: 1, opacity: 1 }}
                 className="text-center pixel-card"
               >
-                <p className="font-pixel text-lg text-gray-400">
+                <p className="font-pixel text-sm sm:text-lg text-gray-400">
                   Nog geen spelers gevonden
                 </p>
               </motion.div>
@@ -346,12 +351,12 @@ export default function Admin() {
                   transition={{ delay: roomIndex * 0.1 }}
                   className="pixel-card"
                 >
-                  <div className="flex justify-between items-center mb-4">
-                    <div>
-                      <h3 className="font-pixel text-lg text-white">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-pixel text-xs sm:text-sm lg:text-lg text-white truncate">
                         {room.name}
                       </h3>
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2 sm:gap-4 mt-1">
                         <p className="font-pixel text-xs text-gray-400">
                           Code: <span className="text-yellow-400 tracking-wider">{room.code}</span>
                         </p>
@@ -368,23 +373,23 @@ export default function Admin() {
                     </div>
                     <button
                       onClick={() => deleteRoom(room.id)}
-                      className="pixel-button bg-red-600 hover:bg-red-700"
+                      className="pixel-button bg-red-600 hover:bg-red-700 text-xs"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                     </button>
                   </div>
 
                   {/* Players in Room */}
                   {room.players && room.players.length > 0 && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       {room.players.map((player) => (
-                        <div key={player.uid} className="bg-slate-700 p-3">
+                        <div key={player.uid} className="bg-slate-700 p-2 sm:p-3">
                           <div className="flex items-center gap-2 mb-2">
-                            <span className="text-2xl">
+                            <span className="text-xl sm:text-2xl">
                               {player.character?.hat?.sprite || '👤'}
                             </span>
-                            <div className="flex-1">
-                              <h4 className="font-pixel text-xs text-white">
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-pixel text-xs text-white truncate">
                                 {player.character?.name}
                               </h4>
                               <p className="font-pixel text-xs text-gray-400">
@@ -427,7 +432,7 @@ export default function Admin() {
                 animate={{ scale: 1, opacity: 1 }}
                 className="text-center pixel-card"
               >
-                <p className="font-pixel text-lg text-gray-400">
+                <p className="font-pixel text-sm sm:text-lg text-gray-400">
                   Nog geen kamers actief
                 </p>
               </motion.div>

@@ -27,7 +27,26 @@ export default function Login() {
       }
       navigate('/characters');
     } catch (error) {
-      toast.error(isSignup ? 'Fout bij aanmaken account' : 'Fout bij inloggen');
+      console.error('Auth error:', error);
+      
+      let errorMessage = isSignup ? 'Fout bij aanmaken account' : 'Fout bij inloggen';
+      
+      // Specifieke foutmeldingen
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'Dit email adres is al in gebruik';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'Wachtwoord moet minimaal 6 karakters zijn';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Ongeldig email adres';
+      } else if (error.code === 'auth/user-not-found') {
+        errorMessage = 'Gebruiker niet gevonden';
+      } else if (error.code === 'auth/wrong-password') {
+        errorMessage = 'Verkeerd wachtwoord';
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMessage = 'Te veel pogingen. Probeer het later opnieuw';
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
